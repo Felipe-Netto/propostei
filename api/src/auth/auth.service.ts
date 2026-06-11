@@ -20,11 +20,12 @@ export class AuthService {
         }
 
         const hashedPassword = await bcrypt.hash(data.password, 10);
+        const { password, ...userData } = data;
 
         const user = await this.prismaService.user.create({
             data: {
-                ...data,
-                password: hashedPassword
+                ...userData,
+                passwordHash: hashedPassword
             }
         });
 
@@ -48,7 +49,7 @@ export class AuthService {
             throw new UnauthorizedException('Invalid credentials');
         }
 
-        const passwordMatch = await bcrypt.compare(data.password, user.password);
+        const passwordMatch = await bcrypt.compare(data.password, user.passwordHash);
 
         if (!passwordMatch) {
             throw new UnauthorizedException('Invalid credentials');
