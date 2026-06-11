@@ -1,13 +1,10 @@
 import { Module } from '@nestjs/common';
+import { AuthModule } from 'src/auth/auth.module';
 import { CompaniesController } from './companies.controller';
 import { CompaniesService } from './companies.service';
-import { AuthModule } from 'src/auth/auth.module';
-import { AuthGuard } from 'src/auth/auth.guard';
 
 @Module({
-  imports: [
-    AuthGuard
-  ],
+  imports: [AuthModule],
   controllers: [CompaniesController],
   providers: [CompaniesService]
 })
