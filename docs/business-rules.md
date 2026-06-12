@@ -1,228 +1,311 @@
-# Propostei — Regras de Negócio
+# API Routes - Propostei
 
-## Visão geral
+Base URL local:
 
-O Propostei é um aplicativo para prestadores de serviço criarem, enviarem e acompanharem propostas/orçamentos profissionais.
+txt http://localhost:3000 
 
-A estrutura principal do sistema é baseada em:
+All protected routes require authentication using Bearer Token.
 
-- User
-- Company
-- CompanyMember
-- Subscription
-- Client
-- Quote
-- QuoteItem
+txt Authorization: Bearer <token> 
 
-## Conceitos principais
+---
 
-### User
+# Auth
 
-Representa a pessoa que faz login no sistema.
+## Register
 
-Exemplo:
+txt POST /auth/register 
 
-- João
-- Maria
-- Felipe
+Creates a new user account.
 
-Um usuário pode participar de uma ou mais empresas através de vínculos em `CompanyMember`.
+### Body
 
-### Company
+json {   "name": "Felipe Netto",   "email": "felipe@email.com",   "password": "123456" } 
 
-Representa a empresa, negócio, workspace ou perfil profissional onde ficam os dados do sistema.
+---
 
-Exemplo:
+## Login
 
-- João Instalações Elétricas
-- Maria Pinturas
-- Agência Netto
+txt POST /auth/login 
 
-Clientes, propostas, itens e assinatura pertencem à empresa.
+Authenticates the user and returns an access token.
 
-### CompanyMember
+### Body
 
-Representa o vínculo entre um usuário e uma empresa.
+json {   "email": "felipe@email.com",   "password": "123456" } 
 
-Esse vínculo define qual papel o usuário possui dentro da empresa.
+---
 
-Papéis iniciais:
+# Companies
 
-- OWNER
-- ADMIN
-- MEMBER
+Companies represent the user's business/workspace inside Propostei.
 
-No MVP, quando um usuário cria uma empresa, ele automaticamente vira `OWNER`.
+Users access companies through CompanyMember.
 
-### Subscription
+Roles:
 
-Representa o plano da empresa.
+txt OWNER ADMIN MEMBER 
 
-A assinatura pertence à `Company`, não ao `User`.
+---
 
-Isso permite que uma empresa tenha seu próprio plano, independentemente dos usuários vinculados a ela.
+## Create company
 
-Planos iniciais:
+txt POST /companies 
 
-- FREE
-- PRO
-- TEAM
+Creates a company for the authenticated user.
 
-Status iniciais:
+The authenticated user becomes the company OWNER.
 
-- ACTIVE
-- CANCELED
+A FREE and ACTIVE subscription is created automatically.
 
-No MVP, toda empresa criada começa com plano `FREE` e status `ACTIVE`.
+### Body
 
-## Regras do MVP
+json {   "name": "Netto Elétrica",   "document": "12345678000199",   "phone": "17999999999",   "email": "contato@nettoeletrica.com",   "address": "Rua Exemplo, 123",   "logoUrl": "https://example.com/logo.png" } 
 
-### Criação de empresa
+### Rules
 
-No MVP, um usuário pode criar apenas uma empresa gratuita.
+txt - Authenticated user required - Free users can create only one free company - document is optional - document cannot be duplicated globally 
 
-Mesmo que o banco suporte múltiplas empresas por usuário, a interface e a regra de negócio inicial bloqueiam a criação de múltiplas empresas no plano grátis.
+---
 
-Regra:
+## List companies
 
-- Se o usuário ainda não é `OWNER` de nenhuma empresa, pode criar uma empresa.
-- Ao criar a empresa, o sistema cria automaticamente:
-  - Company
-  - CompanyMember com role `OWNER`
-  - Subscription com plan `FREE` e status `ACTIVE`
-- Se o usuário já for `OWNER` de uma empresa, a criação de nova empresa deve ser bloqueada no MVP.
+txt GET /companies 
 
-Mensagem sugerida:
+Returns all companies where the authenticated user is a member.
 
-> Usuários do plano grátis podem criar apenas uma empresa.
+### Rules
 
-### Acesso a empresas
+txt - Authenticated user required - Only returns companies where the user is a member 
 
-Um usuário só pode acessar empresas onde possui vínculo em `CompanyMember`.
+---
 
-Regra:
+## Get company by id
 
-- Para listar empresas, buscar apenas empresas onde o usuário logado é membro.
-- Para acessar uma empresa específica, validar se existe `CompanyMember` para o usuário e a empresa.
+txt GET /companies/:id 
 
-### Edição de empresa
+Returns one company by id.
 
-Apenas usuários com role `OWNER` ou `ADMIN` podem editar dados da empresa.
+### Rules
 
-No MVP, como só existe `OWNER`, apenas o dono edita.
+txt - Authenticated user required - User must be a member of the company 
 
-### Assinatura por empresa
+---
 
-A cobrança será feita por empresa, não por usuário.
+## Update company
 
-Exemplo:
+txt PATCH /companies/:id 
 
-- Empresa A pode estar no plano FREE.
-- Empresa B pode estar no plano PRO.
-- O mesmo usuário pode participar das duas empresas no futuro.
+Updates company registration data.
 
-### Plano FREE
+### Body
 
-Regras iniciais sugeridas:
+json {   "name": "Netto Elétrica Atualizada",   "document": "12345678000199",   "phone": "17999999999",   "email": "novo@email.com",   "address": "Rua Nova, 456",   "logoUrl": "https://example.com/new-logo.png" } 
 
-- 1 empresa por usuário
-- limite de propostas por mês
-- PDF com marca d'água
-- 1 usuário/membro no MVP
+### Rules
 
-### Plano PRO
+txt - Authenticated user required - Only OWNER or ADMIN can update company data - Does not update subscription - Does not update members - Does not update roles - document cannot belong to another company 
 
-Regras futuras sugeridas:
+---
 
-- propostas ilimitadas
-- PDF sem marca d'água
-- logo da empresa
-- link público da proposta
-- envio facilitado pelo WhatsApp
+# Clients
 
-### Plano TEAM
+Clients belong to companies.
 
-Regras futuras sugeridas:
+A client does not belong directly to a user.
 
-- múltiplos membros
-- permissões por usuário
-- histórico de alterações
-- recursos colaborativos
+---
 
-## Decisões de modelagem
+## Create client
 
-### Por que User não tem companies direto?
+txt POST /companies/:companyId/clients 
 
-A relação entre `User` e `Company` passa por `CompanyMember`.
+Creates a client inside a company.
 
-Isso acontece porque o vínculo possui informações próprias, como:
+### Body
 
-- role
-- data de criação
-- permissões futuras
+json {   "name": "João da Silva",   "document": "12345678900",   "phone": "17999999999",   "email": "joao@email.com",   "address": "Rua Cliente, 100",   "notes": "Cliente interessado em serviços elétricos residenciais." } 
 
-Portanto, o relacionamento correto é:
+### Rules
 
-User → CompanyMember → Company
+txt - Authenticated user required - User must be able to manage the company - OWNER and ADMIN can create clients - Client belongs to the company from the route param - Client document is not globally unique - Different companies may have clients with the same document 
 
-### Por que Subscription pertence à Company?
+---
 
-A assinatura pertence à empresa porque os dados e recursos principais do sistema pertencem à empresa:
+## List clients
 
-- clientes
-- propostas
-- itens
-- membros
-- logo
-- configurações
+txt GET /companies/:companyId/clients 
 
-Isso permite cobrar por workspace/empresa, e não diretamente por usuário.
+Returns all clients from a company.
 
-### Por que não permitir várias empresas grátis?
+### Rules
 
-Se múltiplas empresas grátis fossem liberadas, um usuário poderia criar várias empresas para burlar limites do plano FREE.
+txt - Authenticated user required - User must be a member of the company - Only returns clients from the selected company 
 
-Por isso, no MVP, o usuário grátis só pode criar uma empresa.
+---
 
-## Status de assinatura
+## Get client by id
 
-### ACTIVE
+txt GET /companies/:companyId/clients/:clientId 
 
-A assinatura está ativa.
+Returns one client from a company.
 
-No plano FREE, significa que a empresa pode usar os recursos gratuitos.
+### Rules
 
-No plano PRO ou TEAM, significa que a assinatura paga está válida.
+txt - Authenticated user required - User must be a member of the company - Client must belong to the selected company 
 
-### CANCELED
+---
 
-A assinatura foi cancelada.
+## Update client
 
-No MVP, esse status será usado apenas de forma simples.
+txt PATCH /companies/:companyId/clients/:clientId 
 
-Status como `PAST_DUE`, `TRIALING` e `EXPIRED` podem ser adicionados futuramente quando houver integração real com meio de pagamento.
+Updates client data.
 
-## Próximas entidades
+### Body
 
-### Client
+json {   "name": "João da Silva Atualizado",   "document": "12345678900",   "phone": "17888888888",   "email": "joao.novo@email.com",   "address": "Rua Atualizada, 200",   "notes": "Cliente atualizado." } 
 
-Representa o cliente da empresa.
+### Rules
 
-Todo cliente pertence a uma empresa.
+txt - Authenticated user required - User must be able to manage the company - Client must belong to the selected company - Does not allow changing companyId 
 
-### Quote
+---
 
-Representa uma proposta/orçamento.
+# Quotes
 
-Toda proposta pertence a uma empresa e pode estar vinculada a um cliente.
+Quotes represent commercial proposals/budgets.
 
-### QuoteItem
+A quote belongs to:
 
-Representa os itens da proposta.
+txt Company Client 
 
-Exemplo:
+A quote has many quote items.
 
-- Instalação de tomada
-- Pintura de parede
-- Mão de obra
-- Material
+Quote items represent products/services inside the proposal.
+
+---
+
+## Quote status
+
+txt DRAFT SENT VIEWED APPROVED REJECTED CANCELED EXPIRED 
+
+---
+
+## Create quote
+
+txt POST /companies/:companyId/quotes 
+
+Creates a quote with items.
+
+### Body
+
+json {   "clientId": "client-uuid",   "title": "Instalação elétrica residencial",   "description": "Serviços para reforma da cozinha",   "discount": 50,   "validUntil": "2026-07-10T00:00:00.000Z",   "items": [     {       "description": "Instalação de tomada",       "quantity": 2,       "unitPrice": 150     },     {       "description": "Mão de obra",       "quantity": 1,       "unitPrice": 300     }   ] } 
+
+### Calculation example
+
+txt Item 1: 2 * 150 = 300 Item 2: 1 * 300 = 300  subtotal = 600 discount = 50 total = 550 
+
+### Rules
+
+txt - Authenticated user required - User must be able to manage the company - Client must belong to the selected company - Items array must have at least one item - Backend calculates subtotal - Backend calculates total - Frontend must not send subtotal - Frontend must not send total - Discount cannot be greater than subtotal - Quote and QuoteItems are created in a transaction 
+
+---
+
+## List quotes
+
+txt GET /companies/:companyId/quotes 
+
+Returns all quotes from a company.
+
+### Rules
+
+txt - Authenticated user required - User must be a member of the company - Only returns quotes from the selected company - Includes basic client information - Does not need to include quote items - Ordered by createdAt desc 
+
+---
+
+## Get quote by id
+
+txt GET /companies/:companyId/quotes/:quoteId 
+
+Returns one quote with client and items.
+
+### Rules
+
+txt - Authenticated user required - User must be a member of the company - Quote must belong to the selected company - Includes client information - Includes quote items 
+
+---
+
+## Update quote
+
+txt PATCH /companies/:companyId/quotes/:quoteId 
+
+Updates quote data.
+
+### Body example
+
+json {   "title": "Instalação elétrica residencial atualizada",   "description": "Descrição atualizada",   "discount": 100,   "validUntil": "2026-08-10T00:00:00.000Z",   "status": "SENT",   "items": [     {       "description": "Instalação de tomada",       "quantity": 3,       "unitPrice": 150     },     {       "description": "Mão de obra",       "quantity": 1,       "unitPrice": 400     }   ] } 
+
+### Rules
+
+txt - Authenticated user required - User must be able to manage the company - Quote must belong to the selected company - Does not allow changing companyId - Does not allow changing clientId for now - If items are provided, old items are replaced - If items are provided, subtotal and total are recalculated - If only discount changes, total is recalculated using existing subtotal - Discount cannot be greater than subtotal - If status becomes APPROVED, approvedAt is set - If status becomes REJECTED, rejectedAt is set - Does not create work orders yet 
+
+---
+
+## Send quote
+
+txt PATCH /companies/:companyId/quotes/:quoteId/send
+
+Sets the quote status to SENT.
+
+### Rules
+
+txt - Authenticated user required - User must be able to manage the company - Quote must belong to the selected company - Does not send email - Does not send WhatsApp message - Does not create public link yet
+
+---
+
+## Approve quote
+
+txt PATCH /companies/:companyId/quotes/:quoteId/approve
+
+Sets the quote status to APPROVED and fills approvedAt with the current date.
+
+### Rules
+
+txt - Authenticated user required - User must be able to manage the company - Quote must belong to the selected company - Sets approvedAt - Does not create work orders yet
+
+---
+
+## Reject quote
+
+txt PATCH /companies/:companyId/quotes/:quoteId/reject
+
+Sets the quote status to REJECTED and fills rejectedAt with the current date.
+
+### Rules
+
+txt - Authenticated user required - User must be able to manage the company - Quote must belong to the selected company - Sets rejectedAt
+
+---
+
+## Cancel quote
+
+txt PATCH /companies/:companyId/quotes/:quoteId/cancel
+
+Sets the quote status to CANCELED.
+
+### Rules
+
+txt - Authenticated user required - User must be able to manage the company - Quote must belong to the selected company - Does not set approvedAt - Does not set rejectedAt
+
+---
+
+# Current backend flow
+
+txt User ↓ Company ↓ Client ↓ Quote ↓ QuoteItem 
+
+---
+
+# Not implemented yet
+
+txt DELETE routes PDF generation Public quote links WhatsApp sending Public client approval/rejection Work orders Payments Team member management Subscription checkout
