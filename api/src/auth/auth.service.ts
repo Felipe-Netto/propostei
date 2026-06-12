@@ -46,13 +46,13 @@ export class AuthService {
         });
 
         if (!user) {
-            throw new UnauthorizedException('Invalid credentials');
+            throw new UnauthorizedException('Credenciais inválidas');
         }
 
         const passwordMatch = await bcrypt.compare(data.password, user.passwordHash);
 
         if (!passwordMatch) {
-            throw new UnauthorizedException('Invalid credentials');
+            throw new UnauthorizedException('Credenciais inválidas');
         }
 
         const token = await this.jwtService.signAsync({
