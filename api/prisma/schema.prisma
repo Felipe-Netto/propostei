@@ -13,6 +13,16 @@ datasource db {
   provider = "postgresql"
 }
 
+enum QuoteStatus {
+  DRAFT
+  SENT
+  VIEWED
+  APPROVED
+  REJECTED
+  CANCELED
+  EXPIRED
+}
+
 enum CompanyRole {
   OWNER
   ADMIN
@@ -56,6 +66,8 @@ model Company {
 
   members      CompanyMember[]
   subscription Subscription?
+  clients      Client[]
+  quotes       Quote[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -76,6 +88,71 @@ model CompanyMember {
   @@unique([userId, companyId])
   @@index([userId])
   @@index([companyId])
+}
+
+model Client {
+  id        String @id @default(uuid())
+  companyId String
+
+  name     String  @db.VarChar(120)
+  document String? @db.VarChar(30)
+  phone    String? @db.VarChar(30)
+  email    String? @db.VarChar(120)
+  address  String? @db.VarChar(255)
+  notes    String? @db.VarChar(500)
+
+  company Company @relation(fields: [companyId], references: [id])
+  quotes  Quote[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([companyId])
+}
+
+model Quote {
+  id        String @id @default(uuid())
+  companyId String
+  clientId  String
+
+  title       String      @db.VarChar(120)
+  description String?     @db.VarChar(500)
+  status      QuoteStatus @default(DRAFT)
+
+  subtotal Decimal @default(0) @db.Decimal(10, 2)
+  discount Decimal @default(0) @db.Decimal(10, 2)
+  total    Decimal @default(0) @db.Decimal(10, 2)
+
+  validUntil DateTime?
+  approvedAt DateTime?
+  rejectedAt DateTime?
+
+  company Company     @relation(fields: [companyId], references: [id])
+  client  Client      @relation(fields: [clientId], references: [id])
+  items   QuoteItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([companyId])
+  @@index([clientId])
+}
+
+model QuoteItem {
+  id      String @id @default(uuid())
+  quoteId String
+
+  description String  @db.VarChar(255)
+  quantity    Decimal @db.Decimal(10, 2)
+  unitPrice   Decimal @db.Decimal(10, 2)
+  total       Decimal @db.Decimal(10, 2)
+
+  quote Quote @relation(fields: [quoteId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([quoteId])
 }
 
 model Subscription {
