@@ -209,4 +209,45 @@ export class CompaniesService {
         }
     }
 
+    async ensureUserIsCompanyMember(companyId: string, userId: string) {
+        const member = await this.prismaService.companyMember.findFirst({
+            where: {
+                companyId,
+                userId,
+            },
+            select: {
+                id: true,
+                role: true,
+            },
+        });
+
+        if (!member) {
+            throw new ForbiddenException('You do not have access to this company');
+        }
+
+        return member;
+    }
+
+    async ensureUserCanManageCompany(companyId: string, userId: string) {
+        const member = await this.prismaService.companyMember.findFirst({
+            where: {
+                companyId,
+                userId,
+                role: {
+                    in: ['OWNER', 'ADMIN'],
+                },
+            },
+            select: {
+                id: true,
+                role: true,
+            },
+        });
+
+        if (!member) {
+            throw new ForbiddenException('You cannot manage this company');
+        }
+
+        return member;
+    }
+
 }
