@@ -46,7 +46,7 @@ const planLabelMap: Record<PlanType, string> = {
 const planColorMap: Record<PlanType, string> = {
   FREE: 'bg-slate-100 text-slate-500',
   PRO: 'bg-purple-50 text-purple-700',
-  TEAM: 'bg-amber-50 text-amber-700',
+  TEAM: 'bg-blue-50 text-blue-700',
 }
 
 interface FormState {
