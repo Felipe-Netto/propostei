@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Building2, Plus } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { Building2, Plus, ChevronRight } from 'lucide-react'
+import { maskPhone, maskDocument } from '@/lib/masks'
 import {
   listCompanies,
   createCompany,
@@ -21,24 +23,7 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog'
-
-function extractApiError(err: unknown): string {
-  if (
-    err !== null &&
-    typeof err === 'object' &&
-    'response' in err
-  ) {
-    const res = (err as { response: unknown }).response
-    if (res !== null && typeof res === 'object' && 'data' in res) {
-      const data = (res as { data: unknown }).data
-      if (data !== null && typeof data === 'object' && 'message' in data) {
-        const msg = (data as { message: unknown }).message
-        if (typeof msg === 'string') return msg
-      }
-    }
-  }
-  return 'Ocorreu um erro inesperado. Tente novamente.'
-}
+import { extractApiError } from '@/lib/utils'
 
 const roleLabelMap: Record<CompanyRole, string> = {
   OWNER: 'Proprietário',
@@ -83,6 +68,7 @@ const emptyForm: FormState = {
 }
 
 export function CompaniesPage() {
+  const navigate = useNavigate()
   const [companies, setCompanies] = useState<Company[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [fetchError, setFetchError] = useState<string | null>(null)
@@ -113,6 +99,11 @@ export function CompaniesPage() {
   function handleField(field: keyof FormState) {
     return (e: React.ChangeEvent<HTMLInputElement>) =>
       setForm((prev) => ({ ...prev, [field]: e.target.value }))
+  }
+
+  function handleMasked(field: keyof FormState, maskFn: (v: string) => string) {
+    return (e: React.ChangeEvent<HTMLInputElement>) =>
+      setForm((prev) => ({ ...prev, [field]: maskFn(e.target.value) }))
   }
 
   async function handleCreate(e: React.FormEvent) {
@@ -203,8 +194,9 @@ export function CompaniesPage() {
                     id="c-doc"
                     placeholder="00.000.000/0001-00"
                     value={form.document}
-                    onChange={handleField('document')}
-                    maxLength={30}
+                    onChange={handleMasked('document', maskDocument)}
+                    inputMode="numeric"
+                    maxLength={18}
                     className="h-10 border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus-visible:ring-teal-500"
                   />
                 </div>
@@ -216,8 +208,9 @@ export function CompaniesPage() {
                     id="c-phone"
                     placeholder="(17) 99999-9999"
                     value={form.phone}
-                    onChange={handleField('phone')}
-                    maxLength={30}
+                    onChange={handleMasked('phone', maskPhone)}
+                    inputMode="numeric"
+                    maxLength={15}
                     className="h-10 border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus-visible:ring-teal-500"
                   />
                 </div>
@@ -336,26 +329,34 @@ export function CompaniesPage() {
             const plan = company.subscription?.plan ?? 'FREE'
 
             return (
-              <div
+              <button
                 key={company.id}
-                className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
+                onClick={() =>
+                  navigate(`/empresas/${company.id}/clientes`, {
+                    state: { companyName: company.name },
+                  })
+                }
+                className="group flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-sm transition-all hover:border-teal-200 hover:shadow-md cursor-pointer"
               >
                 <div className="flex items-start justify-between gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100">
-                    <Building2 className="h-5 w-5 text-slate-500" />
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 transition-colors group-hover:bg-teal-50">
+                    <Building2 className="h-5 w-5 text-slate-500 transition-colors group-hover:text-teal-600" />
                   </div>
                   <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ${planColorMap[plan]}`}>
                     {planLabelMap[plan]}
                   </span>
                 </div>
 
-                <div>
-                  <p className="font-semibold text-slate-900">{company.name}</p>
-                  <span className={`mt-1.5 inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ${roleColorMap[role]}`}>
-                    {roleLabelMap[role]}
-                  </span>
+                <div className="flex items-end justify-between gap-2">
+                  <div>
+                    <p className="font-semibold text-slate-900">{company.name}</p>
+                    <span className={`mt-1.5 inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ${roleColorMap[role]}`}>
+                      {roleLabelMap[role]}
+                    </span>
+                  </div>
+                  <ChevronRight className="h-4 w-4 shrink-0 text-slate-300 transition-colors group-hover:text-teal-500" />
                 </div>
-              </div>
+              </button>
             )
           })}
         </div>

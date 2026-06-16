@@ -6,6 +6,10 @@ import { HomePage } from '@/pages/HomePage'
 import { LoginPage } from '@/pages/LoginPage'
 import { RegisterPage } from '@/pages/RegisterPage'
 import { CompaniesPage } from '@/pages/CompaniesPage'
+import { ClientsPage } from '@/pages/ClientsPage'
+import { ClientDetailPage } from '@/pages/ClientDetailPage'
+import { QuotesPage } from '@/pages/QuotesPage'
+import { CreateQuotePage } from '@/pages/CreateQuotePage'
 
 export function AppRoutes() {
   return (
@@ -37,6 +41,10 @@ export function AppRoutes() {
       >
         <Route path="/home" element={<HomePage />} />
         <Route path="/empresas" element={<CompaniesPage />} />
+        <Route path="/empresas/:companyId/clientes" element={<ClientsPage />} />
+        <Route path="/empresas/:companyId/clientes/:clientId" element={<ClientDetailPage />} />
+        <Route path="/empresas/:companyId/propostas" element={<QuotesPage />} />
+        <Route path="/empresas/:companyId/propostas/nova" element={<CreateQuotePage />} />
       </Route>
     </Routes>
   )

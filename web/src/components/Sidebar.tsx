@@ -2,8 +2,6 @@ import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard,
   Building2,
-  Users,
-  FileText,
   Settings,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -12,8 +10,6 @@ import { Logo } from '@/components/Logo'
 const navItems = [
   { to: '/home', label: 'Início', icon: LayoutDashboard, end: true },
   { to: '/empresas', label: 'Empresas', icon: Building2, end: false },
-  { to: '/clientes', label: 'Clientes', icon: Users, end: false },
-  { to: '/propostas', label: 'Propostas', icon: FileText, end: false },
   { to: '/configuracoes', label: 'Configurações', icon: Settings, end: false },
 ]
 
