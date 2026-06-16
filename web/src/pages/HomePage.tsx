@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   PieChart,
   Pie,
@@ -11,7 +12,7 @@ import {
   YAxis,
   CartesianGrid,
 } from 'recharts'
-import { Building2, Users, FileText, CheckCircle, DollarSign, ChevronDown } from 'lucide-react'
+import { Building2, Users, FileText, CheckCircle, DollarSign, ChevronDown, ArrowRight } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { listCompanies, type Company } from '@/api/companies-api'
 import { listClients } from '@/api/clients-api'
@@ -46,6 +47,7 @@ interface Stats {
   pending: number
   donutData: ChartEntry[]
   barData: ChartEntry[]
+  recentQuotes: Quote[]
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -78,6 +80,10 @@ function buildStats(clients: { length: number }, quotes: Quote[]): Stats {
     })),
   ]
 
+  const recentQuotes = [...quotes]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 5)
+
   return {
     clients:       clients.length,
     quotes:        quotes.length,
@@ -86,6 +92,7 @@ function buildStats(clients: { length: number }, quotes: Quote[]): Stats {
     pending:       statusCounts.DRAFT + statusCounts.SENT + statusCounts.VIEWED,
     donutData,
     barData,
+    recentQuotes,
   }
 }
 
@@ -182,6 +189,7 @@ export function HomePage() {
     return () => { cancelled = true }
   }, [selectedId])
 
+  const navigate = useNavigate()
   const selectedCompany = companies.find((c) => c.id === selectedId)
 
   return (
@@ -292,110 +300,183 @@ export function HomePage() {
             />
           </div>
 
-          {/* Charts */}
+          {/* Charts + recent quotes */}
           {loadingStats ? (
             <div className="flex items-center justify-center py-16 text-sm text-slate-400">
               Carregando dados...
             </div>
           ) : stats && (
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <>
+              {/* ── Charts row ── */}
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
 
-              {/* ── Donut: status das propostas ── */}
-              <Card className="col-span-1">
+                {/* Donut: status das propostas */}
+                <Card className="col-span-1">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold text-slate-700">
+                      Status das Propostas
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {stats.donutData.length === 0 ? (
+                      <div className="flex h-48 items-center justify-center text-sm text-slate-400">
+                        Nenhuma proposta ainda
+                      </div>
+                    ) : (
+                      <>
+                        <ResponsiveContainer width="100%" height={200}>
+                          <PieChart>
+                            <Pie
+                              data={stats.donutData}
+                              dataKey="count"
+                              nameKey="label"
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={56}
+                              outerRadius={88}
+                              paddingAngle={2}
+                              strokeWidth={0}
+                            >
+                              {stats.donutData.map((entry) => (
+                                <Cell key={entry.label} fill={entry.color} />
+                              ))}
+                            </Pie>
+                            <Tooltip content={<ChartTooltip />} />
+                          </PieChart>
+                        </ResponsiveContainer>
+                        <DonutLegend data={stats.donutData} />
+                      </>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Bar: comparação geral */}
+                <Card className="col-span-1 lg:col-span-2">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold text-slate-700">
+                      Comparação Geral
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {stats.quotes === 0 && stats.clients === 0 ? (
+                      <div className="flex h-48 items-center justify-center text-sm text-slate-400">
+                        Nenhum dado ainda
+                      </div>
+                    ) : (
+                      <ResponsiveContainer width="100%" height={260}>
+                        <BarChart
+                          data={stats.barData}
+                          layout="vertical"
+                          margin={{ top: 0, right: 16, bottom: 0, left: 0 }}
+                          barCategoryGap="30%"
+                        >
+                          <CartesianGrid
+                            horizontal={false}
+                            strokeDasharray="3 3"
+                            stroke="#f1f5f9"
+                          />
+                          <XAxis
+                            type="number"
+                            allowDecimals={false}
+                            tick={{ fontSize: 11, fill: '#94a3b8' }}
+                            axisLine={false}
+                            tickLine={false}
+                          />
+                          <YAxis
+                            type="category"
+                            dataKey="label"
+                            width={80}
+                            tick={{ fontSize: 12, fill: '#64748b' }}
+                            axisLine={false}
+                            tickLine={false}
+                          />
+                          <Tooltip
+                            content={<ChartTooltip />}
+                            cursor={{ fill: '#f8fafc' }}
+                          />
+                          <Bar dataKey="count" radius={[0, 4, 4, 0]} maxBarSize={18}>
+                            {stats.barData.map((entry) => (
+                              <Cell key={entry.label} fill={entry.color} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    )}
+                  </CardContent>
+                </Card>
+
+              </div>
+
+              {/* ── Recent quotes ── */}
+              <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-semibold text-slate-700">
-                    Status das Propostas
-                  </CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm font-semibold text-slate-700">
+                      Últimas Propostas
+                    </CardTitle>
+                    <button
+                      onClick={() => navigate(`/empresas/${selectedId}/propostas`)}
+                      className="flex items-center gap-1 text-xs font-medium text-teal-600 hover:text-teal-700"
+                    >
+                      Ver todas
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                 </CardHeader>
-                <CardContent>
-                  {stats.donutData.length === 0 ? (
-                    <div className="flex h-48 items-center justify-center text-sm text-slate-400">
+                <CardContent className="p-0">
+                  {stats.recentQuotes.length === 0 ? (
+                    <div className="flex items-center justify-center py-10 text-sm text-slate-400">
                       Nenhuma proposta ainda
                     </div>
                   ) : (
-                    <>
-                      <ResponsiveContainer width="100%" height={200}>
-                        <PieChart>
-                          <Pie
-                            data={stats.donutData}
-                            dataKey="count"
-                            nameKey="label"
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={56}
-                            outerRadius={88}
-                            paddingAngle={2}
-                            strokeWidth={0}
+                    <div className="divide-y divide-slate-100">
+                      {stats.recentQuotes.map((quote) => (
+                        <button
+                          key={quote.id}
+                          onClick={() =>
+                            navigate(`/empresas/${selectedId}/propostas/${quote.id}`)
+                          }
+                          className="group flex w-full items-center gap-4 px-6 py-3.5 text-left transition-colors hover:bg-slate-50"
+                        >
+                          {/* Title + client */}
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-semibold text-slate-800 group-hover:text-teal-700">
+                              {quote.title}
+                            </p>
+                            <p className="mt-0.5 truncate text-xs text-slate-400">
+                              {quote.client.name}
+                            </p>
+                          </div>
+
+                          {/* Status badge */}
+                          <span
+                            className="shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium"
+                            style={{
+                              backgroundColor: STATUS_CONFIG[quote.status].color + '18',
+                              color: STATUS_CONFIG[quote.status].color,
+                            }}
                           >
-                            {stats.donutData.map((entry) => (
-                              <Cell key={entry.label} fill={entry.color} />
-                            ))}
-                          </Pie>
-                          <Tooltip content={<ChartTooltip />} />
-                        </PieChart>
-                      </ResponsiveContainer>
-                      <DonutLegend data={stats.donutData} />
-                    </>
-                  )}
-                </CardContent>
-              </Card>
+                            {STATUS_CONFIG[quote.status].label}
+                          </span>
 
-              {/* ── Bar: comparação geral ── */}
-              <Card className="col-span-1 lg:col-span-2">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-semibold text-slate-700">
-                    Comparação Geral
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {stats.quotes === 0 && stats.clients === 0 ? (
-                    <div className="flex h-48 items-center justify-center text-sm text-slate-400">
-                      Nenhum dado ainda
+                          {/* Total + date */}
+                          <div className="shrink-0 text-right">
+                            <p className="text-sm font-semibold tabular-nums text-slate-800">
+                              {formatCurrency(parseFloat(quote.total))}
+                            </p>
+                            <p className="mt-0.5 text-xs text-slate-400">
+                              {new Date(quote.createdAt).toLocaleDateString('pt-BR')}
+                            </p>
+                          </div>
+
+                          <ArrowRight className="h-4 w-4 shrink-0 text-slate-300 transition-colors group-hover:text-teal-500" />
+                        </button>
+                      ))}
                     </div>
-                  ) : (
-                    <ResponsiveContainer width="100%" height={260}>
-                      <BarChart
-                        data={stats.barData}
-                        layout="vertical"
-                        margin={{ top: 0, right: 16, bottom: 0, left: 0 }}
-                        barCategoryGap="30%"
-                      >
-                        <CartesianGrid
-                          horizontal={false}
-                          strokeDasharray="3 3"
-                          stroke="#f1f5f9"
-                        />
-                        <XAxis
-                          type="number"
-                          allowDecimals={false}
-                          tick={{ fontSize: 11, fill: '#94a3b8' }}
-                          axisLine={false}
-                          tickLine={false}
-                        />
-                        <YAxis
-                          type="category"
-                          dataKey="label"
-                          width={80}
-                          tick={{ fontSize: 12, fill: '#64748b' }}
-                          axisLine={false}
-                          tickLine={false}
-                        />
-                        <Tooltip
-                          content={<ChartTooltip />}
-                          cursor={{ fill: '#f8fafc' }}
-                        />
-                        <Bar dataKey="count" radius={[0, 4, 4, 0]} maxBarSize={18}>
-                          {stats.barData.map((entry) => (
-                            <Cell key={entry.label} fill={entry.color} />
-                          ))}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
                   )}
                 </CardContent>
               </Card>
-
-            </div>
+            </>
           )}
         </>
       )}
