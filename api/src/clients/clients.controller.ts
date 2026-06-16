@@ -3,13 +3,17 @@ import { AuthGuard } from 'src/auth/auth.guard';
 import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 import type { JwtPayload } from 'src/auth/types/jwt-payload';
 import { ClientsService } from './clients.service';
+import { QuotesService } from 'src/quotes/quotes.service';
 import { CreateClientDto } from './dtos/create-client.dto';
 import { UpdateClientDto } from './dtos/update-client.dto';
 
 @UseGuards(AuthGuard)
 @Controller('companies/:companyId/clients')
 export class ClientsController {
-    constructor(private readonly clientsService: ClientsService) { }
+    constructor(
+        private readonly clientsService: ClientsService,
+        private readonly quotesService: QuotesService,
+    ) { }
 
     @Post()
     async createClient(
@@ -35,6 +39,15 @@ export class ClientsController {
         @CurrentUser() user: JwtPayload,
     ) {
         return this.clientsService.getClient(companyId, clientId, user);
+    }
+
+    @Get(':clientId/quotes')
+    async getClientQuotes(
+        @Param('companyId') companyId: string,
+        @Param('clientId') clientId: string,
+        @CurrentUser() user: JwtPayload,
+    ) {
+        return this.quotesService.getClientQuotes(companyId, clientId, user);
     }
 
     @Patch(':clientId')

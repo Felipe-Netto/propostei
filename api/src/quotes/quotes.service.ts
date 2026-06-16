@@ -147,6 +147,16 @@ export class QuotesService {
         });
     }
 
+    async getClientQuotes(companyId: string, clientId: string, user: JwtPayload) {
+        await this.companiesService.ensureUserIsCompanyMember(companyId, user.id);
+
+        return this.prismaService.quote.findMany({
+            where: { companyId, clientId },
+            select: this.getQuoteListSelect(),
+            orderBy: { createdAt: 'desc' },
+        });
+    }
+
     async getQuote(companyId: string, quoteId: string, user: JwtPayload) {
         await this.companiesService.ensureUserIsCompanyMember(companyId, user.id);
 
