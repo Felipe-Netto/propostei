@@ -32,6 +32,27 @@ export async function listClients(companyId: string): Promise<Client[]> {
   return res.data
 }
 
+export interface UpdateClientInput {
+  name?: string
+  document?: string
+  phone?: string
+  email?: string
+  address?: string
+  notes?: string
+}
+
+export async function updateClient(
+  companyId: string,
+  clientId: string,
+  input: UpdateClientInput,
+): Promise<Client> {
+  const res = await api.patch<Client>(
+    `/companies/${companyId}/clients/${clientId}`,
+    input,
+  )
+  return res.data
+}
+
 export async function createClient(
   companyId: string,
   input: CreateClientInput,

@@ -9,7 +9,9 @@ import { CompaniesPage } from '@/pages/CompaniesPage'
 import { ClientsPage } from '@/pages/ClientsPage'
 import { ClientDetailPage } from '@/pages/ClientDetailPage'
 import { QuotesPage } from '@/pages/QuotesPage'
+import { QuoteDetailPage } from '@/pages/QuoteDetailPage'
 import { CreateQuotePage } from '@/pages/CreateQuotePage'
+import { EditQuotePage } from '@/pages/EditQuotePage'
 
 export function AppRoutes() {
   return (
@@ -45,6 +47,8 @@ export function AppRoutes() {
         <Route path="/empresas/:companyId/clientes/:clientId" element={<ClientDetailPage />} />
         <Route path="/empresas/:companyId/propostas" element={<QuotesPage />} />
         <Route path="/empresas/:companyId/propostas/nova" element={<CreateQuotePage />} />
+        <Route path="/empresas/:companyId/propostas/:quoteId" element={<QuoteDetailPage />} />
+        <Route path="/empresas/:companyId/propostas/:quoteId/editar" element={<EditQuotePage />} />
       </Route>
     </Routes>
   )

@@ -84,3 +84,37 @@ export async function getQuote(companyId: string, quoteId: string): Promise<Quot
   const res = await api.get<Quote>(`/companies/${companyId}/quotes/${quoteId}`)
   return res.data
 }
+
+export interface UpdateQuoteInput {
+  title?: string
+  description?: string
+  discount?: number
+  validUntil?: string
+  items?: CreateQuoteItemInput[]
+}
+
+export async function updateQuote(
+  companyId: string,
+  quoteId: string,
+  input: UpdateQuoteInput,
+): Promise<Quote> {
+  const res = await api.patch<Quote>(`/companies/${companyId}/quotes/${quoteId}`, input)
+  return res.data
+}
+
+async function patchStatus(companyId: string, quoteId: string, action: string): Promise<Quote> {
+  const res = await api.patch<Quote>(`/companies/${companyId}/quotes/${quoteId}/${action}`)
+  return res.data
+}
+
+export const sendQuote = (companyId: string, quoteId: string) =>
+  patchStatus(companyId, quoteId, 'send')
+
+export const approveQuote = (companyId: string, quoteId: string) =>
+  patchStatus(companyId, quoteId, 'approve')
+
+export const rejectQuote = (companyId: string, quoteId: string) =>
+  patchStatus(companyId, quoteId, 'reject')
+
+export const cancelQuote = (companyId: string, quoteId: string) =>
+  patchStatus(companyId, quoteId, 'cancel')

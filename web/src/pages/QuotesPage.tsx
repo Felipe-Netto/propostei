@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useLocation, useNavigate } from 'react-router-dom'
-import { FileText, Plus, ArrowLeft } from 'lucide-react'
+import { FileText, Plus, ArrowLeft, ChevronRight } from 'lucide-react'
 import { listQuotes, type Quote, type QuoteStatus } from '@/api/quotes-api'
 import { Button } from '@/components/ui/button'
 import { CompanyTabs } from '@/components/CompanyTabs'
@@ -130,24 +130,33 @@ export function QuotesPage() {
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
             <ul className="divide-y divide-slate-100">
               {quotes.map((quote) => (
-                <li key={quote.id} className="flex items-center gap-4 px-5 py-4">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="truncate text-sm font-semibold text-slate-900">
-                        {quote.title}
+                <li key={quote.id}>
+                  <button
+                    onClick={() =>
+                      navigate(`/empresas/${companyId!}/propostas/${quote.id}`, {
+                        state: { companyName },
+                      })
+                    }
+                    className="flex w-full items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-slate-50 cursor-pointer"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="truncate text-sm font-semibold text-slate-900">
+                          {quote.title}
+                        </p>
+                        <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${statusColor[quote.status]}`}>
+                          {statusLabel[quote.status]}
+                        </span>
+                      </div>
+                      <p className="mt-0.5 text-xs text-slate-400">
+                        {quote.client.name} · {formatDate(quote.createdAt)}
                       </p>
-                      <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${statusColor[quote.status]}`}>
-                        {statusLabel[quote.status]}
-                      </span>
                     </div>
-                    <p className="mt-0.5 text-xs text-slate-400">
-                      {quote.client.name} · {formatDate(quote.createdAt)}
+                    <p className="shrink-0 text-sm font-semibold text-slate-900">
+                      {formatBRL(quote.total)}
                     </p>
-                  </div>
-
-                  <p className="shrink-0 text-sm font-semibold text-slate-900">
-                    {formatBRL(quote.total)}
-                  </p>
+                    <ChevronRight className="h-4 w-4 shrink-0 text-slate-300" />
+                  </button>
                 </li>
               ))}
             </ul>
