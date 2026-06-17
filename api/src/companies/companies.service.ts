@@ -124,6 +124,11 @@ export class CompaniesService {
             select: {
                 id: true,
                 name: true,
+                document: true,
+                phone: true,
+                email: true,
+                address: true,
+                logoUrl: true,
                 members: {
                     where: {
                         userId: user.id,

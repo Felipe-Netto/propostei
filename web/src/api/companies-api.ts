@@ -6,6 +6,11 @@ export type PlanType = 'FREE' | 'PRO' | 'TEAM'
 export interface Company {
   id: string
   name: string
+  document?: string | null
+  phone?: string | null
+  email?: string | null
+  address?: string | null
+  logoUrl?: string | null
   members: { role: CompanyRole }[]
   subscription: { plan: PlanType; status: string }
 }
@@ -19,8 +24,15 @@ export interface CreateCompanyInput {
   logoUrl?: string
 }
 
+export type UpdateCompanyInput = Partial<CreateCompanyInput>
+
 export async function listCompanies(): Promise<Company[]> {
   const res = await api.get<Company[]>('/companies')
+  return res.data
+}
+
+export async function getCompany(id: string): Promise<Company> {
+  const res = await api.get<Company>(`/companies/${id}`)
   return res.data
 }
 
@@ -33,5 +45,10 @@ export async function createCompany(input: CreateCompanyInput): Promise<Company>
   if (input.logoUrl) payload.logoUrl = input.logoUrl
 
   const res = await api.post<Company>('/companies', payload)
+  return res.data
+}
+
+export async function updateCompany(id: string, input: UpdateCompanyInput): Promise<Company> {
+  const res = await api.patch<Company>(`/companies/${id}`, input)
   return res.data
 }

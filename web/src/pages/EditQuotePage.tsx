@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { useParams, useLocation, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react'
+import { useCompany } from '@/context/CompanyContext'
 import { getQuote, updateQuote, type CreateQuoteItemInput } from '@/api/quotes-api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -22,13 +23,11 @@ const inputCls =
   'h-10 border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus-visible:ring-teal-500'
 
 export function EditQuotePage() {
-  const { companyId, quoteId } = useParams<{ companyId: string; quoteId: string }>()
-  const location = useLocation()
+  const { quoteId } = useParams<{ quoteId: string }>()
   const navigate = useNavigate()
-  const state = location.state as { companyName?: string; backTo?: string; backLabel?: string } | null
-  const companyName = state?.companyName
-  const backTo = state?.backTo
-  const backLabel = state?.backLabel
+  const location = useLocation()
+  const { selectedId: companyId } = useCompany()
+  const state = location.state as { backTo?: string; backLabel?: string } | null
 
   const [isLoadingQuote, setIsLoadingQuote] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -104,7 +103,7 @@ export function EditQuotePage() {
       (i) => i.description.trim() && parseFloat(i.quantity) > 0 && parseFloat(i.unitPrice) >= 0,
     )
 
-  const backPath = `/empresas/${companyId}/propostas/${quoteId}`
+  const backPath = `/propostas/${quoteId}`
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -127,7 +126,7 @@ export function EditQuotePage() {
         validUntil: validUntil || undefined,
         items: quoteItems,
       })
-      navigate(backPath, { state: { companyName, backTo, backLabel } })
+      navigate(backPath, { state })
     } catch (err) {
       setSubmitError(extractApiError(err))
     } finally {
@@ -157,7 +156,7 @@ export function EditQuotePage() {
       {/* Back */}
       <div className="flex flex-col gap-2">
         <button
-          onClick={() => navigate(backPath, { state: { companyName, backTo, backLabel } })}
+          onClick={() => navigate(backPath)}
           className="flex w-fit items-center gap-1.5 text-sm text-slate-400 transition-colors hover:text-slate-600 cursor-pointer"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
@@ -337,7 +336,7 @@ export function EditQuotePage() {
           <Button
             type="button"
             variant="outline"
-            onClick={() => navigate(backPath, { state: { companyName, backTo, backLabel } })}
+            onClick={() => navigate(backPath)}
             className="border-slate-200 text-slate-700 hover:bg-slate-50"
           >
             Cancelar

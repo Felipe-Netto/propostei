@@ -1,16 +1,13 @@
 import { NavLink } from 'react-router-dom'
-import {
-  LayoutDashboard,
-  Building2,
-  Settings,
-} from 'lucide-react'
+import { LayoutDashboard, Users, FileText, Settings } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Logo } from '@/components/Logo'
 
 const navItems = [
-  { to: '/home', label: 'Início', icon: LayoutDashboard, end: true },
-  { to: '/empresas', label: 'Empresas', icon: Building2, end: false },
-  { to: '/configuracoes', label: 'Configurações', icon: Settings, end: false },
+  { to: '/home',         label: 'Início',        icon: LayoutDashboard, end: true  },
+  { to: '/clientes',     label: 'Clientes',      icon: Users,           end: false },
+  { to: '/propostas',    label: 'Propostas',     icon: FileText,        end: false },
+  { to: '/configuracoes',label: 'Configurações', icon: Settings,        end: false },
 ]
 
 interface SidebarProps {
@@ -42,7 +39,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
                 'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
                 isActive
                   ? 'bg-teal-500/20 text-teal-300 shadow-sm ring-1 ring-teal-500/20'
-                  : 'text-slate-400 hover:bg-white/[0.06] hover:text-slate-200'
+                  : 'text-slate-400 hover:bg-white/[0.06] hover:text-slate-200',
               )
             }
           >
@@ -51,7 +48,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
                 <Icon
                   className={cn(
                     'h-4 w-4 shrink-0 transition-colors',
-                    isActive ? 'text-teal-400' : 'text-slate-500 group-hover:text-slate-300'
+                    isActive ? 'text-teal-400' : 'text-slate-500 group-hover:text-slate-300',
                   )}
                 />
                 {label}

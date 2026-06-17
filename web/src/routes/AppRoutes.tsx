@@ -42,13 +42,13 @@ export function AppRoutes() {
         }
       >
         <Route path="/home" element={<HomePage />} />
+        <Route path="/clientes" element={<ClientsPage />} />
+        <Route path="/clientes/:clientId" element={<ClientDetailPage />} />
+        <Route path="/propostas" element={<QuotesPage />} />
+        <Route path="/propostas/nova" element={<CreateQuotePage />} />
+        <Route path="/propostas/:quoteId" element={<QuoteDetailPage />} />
+        <Route path="/propostas/:quoteId/editar" element={<EditQuotePage />} />
         <Route path="/empresas" element={<CompaniesPage />} />
-        <Route path="/empresas/:companyId/clientes" element={<ClientsPage />} />
-        <Route path="/empresas/:companyId/clientes/:clientId" element={<ClientDetailPage />} />
-        <Route path="/empresas/:companyId/propostas" element={<QuotesPage />} />
-        <Route path="/empresas/:companyId/propostas/nova" element={<CreateQuotePage />} />
-        <Route path="/empresas/:companyId/propostas/:quoteId" element={<QuoteDetailPage />} />
-        <Route path="/empresas/:companyId/propostas/:quoteId/editar" element={<EditQuotePage />} />
       </Route>
     </Routes>
   )

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { useParams, useLocation, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { ArrowLeft, Pencil, User, Calendar, AlignLeft } from 'lucide-react'
+import { useCompany } from '@/context/CompanyContext'
 import {
   getQuote,
   sendQuote,
@@ -36,13 +37,13 @@ const statusColor: Record<QuoteStatus, string> = {
 const editableStatuses: QuoteStatus[] = ['DRAFT', 'SENT', 'VIEWED']
 
 export function QuoteDetailPage() {
-  const { companyId, quoteId } = useParams<{ companyId: string; quoteId: string }>()
-  const location = useLocation()
+  const { quoteId } = useParams<{ quoteId: string }>()
   const navigate = useNavigate()
-  const state = location.state as { companyName?: string; backTo?: string; backLabel?: string } | null
-  const companyName = state?.companyName
-  const backTo = state?.backTo ?? `/empresas/${companyId}/propostas`
-  const backLabel = state?.backLabel ?? companyName ?? 'Propostas'
+  const location = useLocation()
+  const { selectedId: companyId } = useCompany()
+  const state = location.state as { backTo?: string; backLabel?: string } | null
+  const backTo = state?.backTo ?? '/propostas'
+  const backLabel = state?.backLabel ?? 'Propostas'
 
   const [quote, setQuote] = useState<Quote | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -103,7 +104,7 @@ export function QuoteDetailPage() {
 
       {/* Back */}
       <button
-        onClick={() => navigate(backTo, { state: { companyName } })}
+        onClick={() => navigate(backTo)}
         className="flex w-fit items-center gap-1.5 text-sm text-slate-400 transition-colors hover:text-slate-600 cursor-pointer"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
@@ -138,11 +139,7 @@ export function QuoteDetailPage() {
 
         {canEdit && (
           <Button
-            onClick={() =>
-              navigate(`/empresas/${companyId!}/propostas/${quoteId!}/editar`, {
-                state: { companyName, backTo, backLabel },
-              })
-            }
+            onClick={() => navigate(`/propostas/${quoteId}/editar`, { state: { backTo, backLabel } })}
             variant="outline"
             className="h-9 gap-1.5 border-slate-200 text-sm text-slate-700 hover:bg-slate-50"
           >

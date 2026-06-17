@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { useParams, useLocation, useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react'
+import { useCompany } from '@/context/CompanyContext'
 import { listClients, type Client } from '@/api/clients-api'
 import { createQuote, type CreateQuoteItemInput } from '@/api/quotes-api'
 import { Button } from '@/components/ui/button'
@@ -30,18 +31,17 @@ const inputCls =
   'h-10 border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus-visible:ring-teal-500'
 
 export function CreateQuotePage() {
-  const { companyId } = useParams<{ companyId: string }>()
-  const location = useLocation()
   const navigate = useNavigate()
-  const state = location.state as { companyName?: string; backTo?: string; backLabel?: string } | null
-  const companyName = state?.companyName
-  const backTo = state?.backTo ?? `/empresas/${companyId}/propostas`
-  const backLabel = state?.backLabel ?? companyName ?? 'Propostas'
+  const location = useLocation()
+  const { selectedId: companyId } = useCompany()
+  const state = location.state as { backTo?: string; backLabel?: string; preselectedClientId?: string } | null
+  const backTo = state?.backTo ?? '/propostas'
+  const backLabel = state?.backLabel ?? 'Propostas'
 
   const [clients, setClients] = useState<Client[]>([])
   const [loadingClients, setLoadingClients] = useState(true)
 
-  const [clientId, setClientId] = useState('')
+  const [clientId, setClientId] = useState(state?.preselectedClientId ?? '')
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [validUntil, setValidUntil] = useState('')
@@ -110,7 +110,7 @@ export function CreateQuotePage() {
         validUntil: validUntil || undefined,
         items: quoteItems,
       })
-      navigate(backTo, { state: { companyName } })
+      navigate(backTo)
     } catch (err) {
       setSubmitError(extractApiError(err))
     } finally {
@@ -124,7 +124,7 @@ export function CreateQuotePage() {
       {/* Back */}
       <div className="flex flex-col gap-2">
         <button
-          onClick={() => navigate(backTo, { state: { companyName } })}
+          onClick={() => navigate(backTo)}
           className="flex w-fit items-center gap-1.5 text-sm text-slate-400 transition-colors hover:text-slate-600 cursor-pointer"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
@@ -139,9 +139,7 @@ export function CreateQuotePage() {
           Cadastre ao menos um cliente antes de criar uma proposta.{' '}
           <button
             className="font-semibold underline underline-offset-2"
-            onClick={() =>
-              navigate(`/empresas/${companyId!}/clientes`, { state: { companyName } })
-            }
+            onClick={() => navigate('/clientes')}
           >
             Ir para Clientes
           </button>
@@ -343,7 +341,7 @@ export function CreateQuotePage() {
           <Button
             type="button"
             variant="outline"
-            onClick={() => navigate(backTo, { state: { companyName } })}
+            onClick={() => navigate(backTo)}
             className="border-slate-200 text-slate-700 hover:bg-slate-50"
           >
             Cancelar

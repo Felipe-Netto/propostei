@@ -12,11 +12,11 @@ import {
   YAxis,
   CartesianGrid,
 } from 'recharts'
-import { Building2, Users, FileText, CheckCircle, DollarSign, ChevronDown, ArrowRight } from 'lucide-react'
+import { Building2, Users, FileText, CheckCircle, DollarSign, ArrowRight } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { listCompanies, type Company } from '@/api/companies-api'
-import { listClients } from '@/api/clients-api'
-import { listQuotes, type Quote, type QuoteStatus } from '@/api/quotes-api'
+import { useCompany } from '@/context/CompanyContext'
+import { getDashboard, type DashboardData, type DashboardRecentQuote } from '@/api/dashboard-api'
+import type { QuoteStatus } from '@/api/quotes-api'
 import { extractApiError } from '@/lib/utils'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -47,7 +47,7 @@ interface Stats {
   pending: number
   donutData: ChartEntry[]
   barData: ChartEntry[]
-  recentQuotes: Quote[]
+  recentQuotes: DashboardRecentQuote[]
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -56,23 +56,19 @@ function formatCurrency(value: number): string {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
 
-function buildStats(clients: { length: number }, quotes: Quote[]): Stats {
+function buildStats(data: DashboardData): Stats {
   const statusCounts = Object.fromEntries(
-    Object.keys(STATUS_CONFIG).map((s) => [s, 0]),
+    Object.keys(STATUS_CONFIG).map((s) => [s, data.quoteCounts[s as QuoteStatus] ?? 0]),
   ) as Record<QuoteStatus, number>
 
-  for (const q of quotes) {
-    statusCounts[q.status]++
-  }
-
-  const approved = quotes.filter((q) => q.status === 'APPROVED')
+  const totalQuotes = Object.values(statusCounts).reduce((a, b) => a + b, 0)
 
   const donutData = (Object.keys(STATUS_CONFIG) as QuoteStatus[])
     .map((s) => ({ label: STATUS_CONFIG[s].label, count: statusCounts[s], color: STATUS_CONFIG[s].color }))
     .filter((d) => d.count > 0)
 
   const barData: ChartEntry[] = [
-    { label: 'Clientes',    count: clients.length,               color: '#3b82f6' },
+    { label: 'Clientes', count: data.clientCount, color: '#3b82f6' },
     ...(Object.keys(STATUS_CONFIG) as QuoteStatus[]).map((s) => ({
       label: STATUS_CONFIG[s].label,
       count: statusCounts[s],
@@ -80,19 +76,15 @@ function buildStats(clients: { length: number }, quotes: Quote[]): Stats {
     })),
   ]
 
-  const recentQuotes = [...quotes]
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 5)
-
   return {
-    clients:       clients.length,
-    quotes:        quotes.length,
-    approved:      approved.length,
-    approvedTotal: approved.reduce((sum, q) => sum + parseFloat(q.total), 0),
+    clients:       data.clientCount,
+    quotes:        totalQuotes,
+    approved:      statusCounts.APPROVED,
+    approvedTotal: parseFloat(data.approvedTotal),
     pending:       statusCounts.DRAFT + statusCounts.SENT + statusCounts.VIEWED,
     donutData,
     barData,
-    recentQuotes,
+    recentQuotes:  data.recentQuotes,
   }
 }
 
@@ -136,33 +128,12 @@ function DonutLegend({ data }: { data: ChartEntry[] }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export function HomePage() {
-  const [companies, setCompanies] = useState<Company[]>([])
-  const [selectedId, setSelectedId] = useState<string>('')
+  const navigate = useNavigate()
+  const { selectedId, selectedCompany, loading: loadingCompanies } = useCompany()
+
   const [stats, setStats] = useState<Stats | null>(null)
-  const [loadingCompanies, setLoadingCompanies] = useState(true)
   const [loadingStats, setLoadingStats] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    let cancelled = false
-
-    async function load() {
-      try {
-        const data = await listCompanies()
-        if (!cancelled) {
-          setCompanies(data)
-          if (data.length > 0) setSelectedId(data[0].id)
-        }
-      } catch (err) {
-        if (!cancelled) setError(extractApiError(err))
-      } finally {
-        if (!cancelled) setLoadingCompanies(false)
-      }
-    }
-
-    void load()
-    return () => { cancelled = true }
-  }, [])
 
   useEffect(() => {
     if (!selectedId) return
@@ -173,11 +144,8 @@ export function HomePage() {
 
     async function load() {
       try {
-        const [clients, quotes] = await Promise.all([
-          listClients(selectedId),
-          listQuotes(selectedId),
-        ])
-        if (!cancelled) setStats(buildStats(clients, quotes))
+        const data = await getDashboard(selectedId)
+        if (!cancelled) setStats(buildStats(data))
       } catch (err) {
         if (!cancelled) setError(extractApiError(err))
       } finally {
@@ -189,40 +157,15 @@ export function HomePage() {
     return () => { cancelled = true }
   }, [selectedId])
 
-  const navigate = useNavigate()
-  const selectedCompany = companies.find((c) => c.id === selectedId)
-
   return (
     <div className="flex flex-col gap-6">
 
-      {/* ── Header + company select ── */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-slate-900">Visão geral</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Selecione uma empresa para ver as informações.
-          </p>
-        </div>
-
-        {!loadingCompanies && companies.length > 0 && (
-          <div className="relative">
-            <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center">
-              <Building2 className="h-4 w-4 text-slate-400" />
-            </div>
-            <select
-              value={selectedId}
-              onChange={(e) => setSelectedId(e.target.value)}
-              className="h-9 appearance-none rounded-lg border border-slate-200 bg-white pl-9 pr-8 text-sm font-medium text-slate-800 shadow-sm transition-colors hover:border-slate-300 focus:border-teal-400 focus:outline-none focus:ring-2 focus:ring-teal-100"
-            >
-              {companies.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
-            <div className="pointer-events-none absolute inset-y-0 right-2.5 flex items-center">
-              <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
-            </div>
-          </div>
-        )}
+      {/* ── Page title ── */}
+      <div>
+        <h1 className="text-xl font-bold text-slate-900">Visão geral</h1>
+        <p className="mt-1 text-sm text-slate-500">
+          Resumo da empresa selecionada.
+        </p>
       </div>
 
       {/* ── Error ── */}
@@ -235,12 +178,12 @@ export function HomePage() {
       {/* ── Loading companies ── */}
       {loadingCompanies && (
         <div className="flex items-center justify-center py-20 text-sm text-slate-400">
-          Carregando empresas...
+          Carregando...
         </div>
       )}
 
       {/* ── No companies ── */}
-      {!loadingCompanies && companies.length === 0 && !error && (
+      {!loadingCompanies && !selectedCompany && !error && (
         <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-slate-200 bg-white py-20">
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-slate-100">
             <Building2 className="h-7 w-7 text-slate-400" />
@@ -249,6 +192,12 @@ export function HomePage() {
           <p className="text-sm text-slate-400">
             Crie uma empresa para começar a usar o Propostei.
           </p>
+          <button
+            onClick={() => navigate('/empresas')}
+            className="mt-1 rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700"
+          >
+            Criar empresa
+          </button>
         </div>
       )}
 
@@ -415,8 +364,8 @@ export function HomePage() {
                       Últimas Propostas
                     </CardTitle>
                     <button
-                      onClick={() => navigate(`/empresas/${selectedId}/propostas`)}
-                      className="flex items-center gap-1 text-xs font-medium text-teal-600 hover:text-teal-700"
+                      onClick={() => navigate('/propostas')}
+                      className="flex items-center gap-1 text-xs font-medium text-teal-600 hover:text-teal-700 cursor-pointer"
                     >
                       Ver todas
                       <ArrowRight className="h-3.5 w-3.5" />
@@ -433,10 +382,8 @@ export function HomePage() {
                       {stats.recentQuotes.map((quote) => (
                         <button
                           key={quote.id}
-                          onClick={() =>
-                            navigate(`/empresas/${selectedId}/propostas/${quote.id}`)
-                          }
-                          className="group flex w-full items-center gap-4 px-6 py-3.5 text-left transition-colors hover:bg-slate-50"
+                          onClick={() => navigate(`/propostas/${quote.id}`, { state: { backTo: '/home', backLabel: 'Início' } })}
+                          className="group flex w-full items-center gap-4 px-6 py-3.5 text-left transition-colors hover:bg-slate-50 cursor-pointer"
                         >
                           {/* Title + client */}
                           <div className="min-w-0 flex-1">

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { useParams, useLocation, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Phone, Mail, MapPin, FileText, Plus, ChevronRight, Pencil } from 'lucide-react'
+import { useCompany } from '@/context/CompanyContext'
 import { getClient, updateClient, type Client } from '@/api/clients-api'
 import { listClientQuotes, type Quote, type QuoteStatus } from '@/api/quotes-api'
 import { Button } from '@/components/ui/button'
@@ -40,10 +41,9 @@ const statusColor: Record<QuoteStatus, string> = {
 }
 
 export function ClientDetailPage() {
-  const { companyId, clientId } = useParams<{ companyId: string; clientId: string }>()
-  const location = useLocation()
+  const { clientId } = useParams<{ clientId: string }>()
   const navigate = useNavigate()
-  const companyName = (location.state as { companyName?: string } | null)?.companyName
+  const { selectedId: companyId } = useCompany()
 
   const [client, setClient] = useState<Client | null>(null)
   const [quotes, setQuotes] = useState<Quote[]>([])
@@ -62,8 +62,8 @@ export function ClientDetailPage() {
     async function load() {
       try {
         const [clientData, clientQuotes] = await Promise.all([
-          getClient(companyId!, clientId!),
-          listClientQuotes(companyId!, clientId!),
+          getClient(companyId, clientId!),
+          listClientQuotes(companyId, clientId!),
         ])
         if (!cancelled) {
           setClient(clientData)
@@ -127,8 +127,6 @@ export function ClientDetailPage() {
     }
   }
 
-  const backState = { companyName }
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20 text-sm text-slate-400">
@@ -149,20 +147,13 @@ export function ClientDetailPage() {
     <div className="flex flex-col gap-6">
 
       {/* Back */}
-      <div className="flex flex-col gap-2">
-        <button
-          onClick={() =>
-            navigate(`/empresas/${companyId!}/clientes`, { state: backState })
-          }
-          className="flex w-fit items-center gap-1.5 text-sm text-slate-400 transition-colors hover:text-slate-600 cursor-pointer"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" />
-          Clientes
-        </button>
-        {companyName && (
-          <p className="text-xs text-slate-400">{companyName}</p>
-        )}
-      </div>
+      <button
+        onClick={() => navigate('/clientes')}
+        className="flex w-fit items-center gap-1.5 text-sm text-slate-400 transition-colors hover:text-slate-600 cursor-pointer"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" />
+        Clientes
+      </button>
 
       {/* Client header */}
       <div className="flex items-center justify-between gap-4">
@@ -305,12 +296,8 @@ export function ClientDetailPage() {
 
           <Button
             onClick={() =>
-              navigate(`/empresas/${companyId!}/propostas/nova`, {
-                state: {
-                  companyName,
-                  backTo: `/empresas/${companyId!}/clientes/${client.id}`,
-                  backLabel: client.name,
-                },
+              navigate('/propostas/nova', {
+                state: { backTo: `/clientes/${clientId}`, backLabel: client.name, preselectedClientId: client.id },
               })
             }
             className="h-9 gap-1.5 bg-teal-600 text-sm font-semibold text-white hover:bg-teal-700"
@@ -367,12 +354,8 @@ export function ClientDetailPage() {
             <p className="text-sm text-slate-400">Nenhuma proposta para este cliente.</p>
             <Button
               onClick={() =>
-                navigate(`/empresas/${companyId!}/propostas/nova`, {
-                  state: {
-                    companyName,
-                    backTo: `/empresas/${companyId!}/clientes/${client.id}`,
-                    backLabel: client.name,
-                  },
+                navigate('/propostas/nova', {
+                  state: { backTo: `/clientes/${clientId}`, backLabel: client.name, preselectedClientId: client.id },
                 })
               }
               variant="outline"
@@ -389,12 +372,8 @@ export function ClientDetailPage() {
                 <li key={quote.id}>
                   <button
                     onClick={() =>
-                      navigate(`/empresas/${companyId!}/propostas/${quote.id}`, {
-                        state: {
-                          companyName,
-                          backTo: `/empresas/${companyId!}/clientes/${client.id}`,
-                          backLabel: client.name,
-                        },
+                      navigate(`/propostas/${quote.id}`, {
+                        state: { backTo: `/clientes/${clientId}`, backLabel: client.name },
                       })
                     }
                     className="flex w-full items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-slate-50 cursor-pointer"
