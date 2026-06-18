@@ -1,5 +1,5 @@
 import api from './api'
-import type { CreateQuoteInput, CreateQuoteItemInput, Quote, UpdateQuoteInput } from '@/types/quotes'
+import type { CreateQuoteInput, Quote, UpdateQuoteInput } from '@/types/quotes'
 
 export async function listQuotes(companyId: string): Promise<Quote[]> {
   const res = await api.get<Quote[]>(`/companies/${companyId}/quotes`)
