@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { usePageTitle } from '@/hooks/usePageTitle'
 import { Users, Plus, Phone, Mail, FileText, ChevronRight, Building2 } from 'lucide-react'
 import { useCompany } from '@/context/CompanyContext'
 import { maskPhone, maskDocument } from '@/lib/masks'
@@ -43,6 +44,7 @@ const emptyForm: FormState = {
 }
 
 export function ClientsPage() {
+  usePageTitle('Clientes')
   const navigate = useNavigate()
   const { selectedId, selectedCompany, loading: loadingCompany } = useCompany()
 

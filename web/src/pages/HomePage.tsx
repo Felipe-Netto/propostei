@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { usePageTitle } from '@/hooks/usePageTitle'
 import {
   PieChart,
   Pie,
@@ -118,6 +119,7 @@ function DonutLegend({ data }: { data: ChartEntry[] }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export function HomePage() {
+  usePageTitle('Início')
   const navigate = useNavigate()
   const { selectedId, selectedCompany, loading: loadingCompanies, refreshCompanies, setSelectedId } = useCompany()
 

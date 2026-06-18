@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
+import { usePageTitle } from '@/hooks/usePageTitle'
 import { useAuth } from '@/auth/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -8,6 +9,7 @@ import { AuthMarketingPanel } from '@/components/AuthMarketingPanel'
 import { Logo } from '@/components/Logo'
 
 export function RegisterPage() {
+  usePageTitle('Criar conta')
   const { register } = useAuth()
   const navigate = useNavigate()
 

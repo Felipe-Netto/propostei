@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
+import { usePageTitle } from '@/hooks/usePageTitle'
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react'
 import { useCompany } from '@/context/CompanyContext'
 import { getQuote, updateQuote } from '@/api/quotes-api'
@@ -24,6 +25,7 @@ const inputCls =
   'h-10 border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus-visible:ring-teal-500'
 
 export function EditQuotePage() {
+  usePageTitle('Editar proposta')
   const { quoteId } = useParams<{ quoteId: string }>()
   const navigate = useNavigate()
   const location = useLocation()

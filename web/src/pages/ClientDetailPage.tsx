@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { usePageTitle } from '@/hooks/usePageTitle'
 import { ArrowLeft, Phone, Mail, MapPin, FileText, Plus, ChevronRight, Pencil } from 'lucide-react'
 import { useCompany } from '@/context/CompanyContext'
 import { getClient, updateClient, type Client } from '@/api/clients-api'
@@ -27,6 +28,7 @@ export function ClientDetailPage() {
   const { selectedId: companyId } = useCompany()
 
   const [client, setClient] = useState<Client | null>(null)
+  usePageTitle(client ? client.name : 'Cliente')
   const [quotes, setQuotes] = useState<Quote[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

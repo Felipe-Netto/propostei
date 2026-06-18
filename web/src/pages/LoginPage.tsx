@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
+import { usePageTitle } from '@/hooks/usePageTitle'
 import { useAuth } from '@/auth/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -9,6 +10,7 @@ import { Logo } from '@/components/Logo'
 import { extractApiError } from '@/lib/utils'
 
 export function LoginPage() {
+  usePageTitle('Entrar')
   const { login } = useAuth()
   const navigate = useNavigate()
 

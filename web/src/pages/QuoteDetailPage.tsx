@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
+import { usePageTitle } from '@/hooks/usePageTitle'
 import { ArrowLeft, Pencil, FileText, User, Calendar, AlignLeft } from 'lucide-react'
 import { useCompany } from '@/context/CompanyContext'
 import {
@@ -20,10 +21,12 @@ export function QuoteDetailPage() {
   const location = useLocation()
   const { selectedId: companyId } = useCompany()
   const state = location.state as { backTo?: string; backLabel?: string } | null
+
   const backTo = state?.backTo ?? '/propostas'
   const backLabel = state?.backLabel ?? 'Propostas'
 
   const [quote, setQuote] = useState<Quote | null>(null)
+  usePageTitle(quote ? quote.title : 'Proposta')
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)

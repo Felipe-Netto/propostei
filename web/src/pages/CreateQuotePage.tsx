@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { usePageTitle } from '@/hooks/usePageTitle'
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react'
 import { useCompany } from '@/context/CompanyContext'
 import { listClients, type Client } from '@/api/clients-api'
@@ -32,6 +33,7 @@ const inputCls =
   'h-10 border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus-visible:ring-teal-500'
 
 export function CreateQuotePage() {
+  usePageTitle('Nova proposta')
   const navigate = useNavigate()
   const location = useLocation()
   const { selectedId: companyId } = useCompany()

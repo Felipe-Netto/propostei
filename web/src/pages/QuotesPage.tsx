@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { usePageTitle } from '@/hooks/usePageTitle'
 import { FileText, Plus, ChevronRight, Building2 } from 'lucide-react'
 import { useCompany } from '@/context/CompanyContext'
 import { listQuotes } from '@/api/quotes-api'
@@ -28,6 +29,7 @@ const statusColor: Record<QuoteStatus, string> = {
 }
 
 export function QuotesPage() {
+  usePageTitle('Propostas')
   const navigate = useNavigate()
   const { selectedId, selectedCompany, loading: loadingCompany } = useCompany()
 
