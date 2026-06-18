@@ -111,9 +111,10 @@ model Client {
 }
 
 model Quote {
-  id        String @id @default(uuid())
-  companyId String
-  clientId  String
+  id          String @id @default(uuid())
+  publicToken String @unique @default(uuid())
+  companyId   String
+  clientId    String
 
   title       String      @db.VarChar(120)
   description String?     @db.VarChar(500)

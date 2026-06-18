@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { AuthMarketingPanel } from '@/components/AuthMarketingPanel'
 import { Logo } from '@/components/Logo'
+import { extractApiError } from '@/lib/utils'
 
 export function LoginPage() {
   const { login } = useAuth()
@@ -25,19 +26,7 @@ export function LoginPage() {
       await login(email, password)
       navigate('/home')
     } catch (err: unknown) {
-      const message =
-        err !== null &&
-        typeof err === 'object' &&
-        'response' in err &&
-        (err as { response: unknown }).response !== null &&
-        typeof (err as { response: unknown }).response === 'object' &&
-        'data' in (err as { response: Record<string, unknown> }).response &&
-        (err as { response: { data: unknown } }).response.data !== null &&
-        typeof (err as { response: { data: unknown } }).response.data === 'object' &&
-        'message' in (err as { response: { data: Record<string, unknown> } }).response.data &&
-        typeof (err as { response: { data: { message: unknown } } }).response.data.message === 'string'
-          ? (err as { response: { data: { message: string } } }).response.data.message
-          : null
+      const message = extractApiError(err)
 
       setError(message ?? 'Ocorreu um erro inesperado. Tente novamente.')
     } finally {

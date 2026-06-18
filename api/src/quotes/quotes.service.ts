@@ -29,6 +29,7 @@ export class QuotesService {
     private getQuoteListSelect() {
         return {
             id: true,
+            publicToken: true,
             companyId: true,
             clientId: true,
             title: true,
@@ -55,6 +56,7 @@ export class QuotesService {
     private getQuoteDetailSelect() {
         return {
             id: true,
+            publicToken: true,
             companyId: true,
             clientId: true,
             title: true,
@@ -287,5 +289,31 @@ export class QuotesService {
 
     async cancelQuote(companyId: string, quoteId: string, user: JwtPayload) {
         return this.updateQuoteStatus(companyId, quoteId, user, QuoteStatus.CANCELED);
+    }
+
+    async getQuoteByToken(publicToken: string) {
+        const quote = await this.prismaService.quote.findUnique({
+            where: { publicToken },
+            select: {
+                ...this.getQuoteDetailSelect(),
+                company: {
+                    select: {
+                        id: true,
+                        name: true,
+                        document: true,
+                        phone: true,
+                        email: true,
+                        address: true,
+                        logoUrl: true,
+                    },
+                },
+            },
+        });
+
+        if (!quote) {
+            throw new NotFoundException('Quote not found');
+        }
+
+        return quote;
     }
 }

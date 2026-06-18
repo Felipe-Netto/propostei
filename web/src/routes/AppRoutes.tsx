@@ -5,7 +5,6 @@ import { AppLayout } from '@/layouts/AppLayout'
 import { HomePage } from '@/pages/HomePage'
 import { LoginPage } from '@/pages/LoginPage'
 import { RegisterPage } from '@/pages/RegisterPage'
-import { CompaniesPage } from '@/pages/CompaniesPage'
 import { ClientsPage } from '@/pages/ClientsPage'
 import { ClientDetailPage } from '@/pages/ClientDetailPage'
 import { QuotesPage } from '@/pages/QuotesPage'
@@ -48,7 +47,6 @@ export function AppRoutes() {
         <Route path="/propostas/nova" element={<CreateQuotePage />} />
         <Route path="/propostas/:quoteId" element={<QuoteDetailPage />} />
         <Route path="/propostas/:quoteId/editar" element={<EditQuotePage />} />
-        <Route path="/empresas" element={<CompaniesPage />} />
       </Route>
     </Routes>
   )

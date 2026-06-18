@@ -3,35 +3,25 @@ import { useNavigate } from 'react-router-dom'
 import {
   PieChart,
   Pie,
-  Cell,
+  Sector,
   Tooltip,
   ResponsiveContainer,
   BarChart,
   Bar,
+  Rectangle,
   XAxis,
   YAxis,
   CartesianGrid,
 } from 'recharts'
-import { Building2, Users, FileText, CheckCircle, DollarSign, ArrowRight } from 'lucide-react'
+import { Building2, Users, FileText, CheckCircle, DollarSign, ArrowRight, Plus } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { useCompany } from '@/context/CompanyContext'
 import { getDashboard, type DashboardData, type DashboardRecentQuote } from '@/api/dashboard-api'
-import type { QuoteStatus } from '@/api/quotes-api'
+import type { QuoteStatus } from '@/types/quotes'
 import { extractApiError } from '@/lib/utils'
-
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-const STATUS_CONFIG: Record<QuoteStatus, { label: string; color: string }> = {
-  DRAFT:    { label: 'Rascunho',    color: '#94a3b8' },
-  SENT:     { label: 'Enviada',     color: '#3b82f6' },
-  VIEWED:   { label: 'Visualizada', color: '#8b5cf6' },
-  APPROVED: { label: 'Aprovada',    color: '#14b8a6' },
-  REJECTED: { label: 'Rejeitada',   color: '#ef4444' },
-  CANCELED: { label: 'Cancelada',   color: '#f97316' },
-  EXPIRED:  { label: 'Expirada',    color: '#64748b' },
-}
-
-// ─── Types ────────────────────────────────────────────────────────────────────
+import type { Company } from '@/api/companies-api'
+import { CreateCompanyDialog } from '@/components/CreateCompanyDialog'
+import { STATUS_CONFIG } from '@/constants/quotes'
 
 interface ChartEntry {
   label: string
@@ -77,14 +67,14 @@ function buildStats(data: DashboardData): Stats {
   ]
 
   return {
-    clients:       data.clientCount,
-    quotes:        totalQuotes,
-    approved:      statusCounts.APPROVED,
+    clients: data.clientCount,
+    quotes: totalQuotes,
+    approved: statusCounts.APPROVED,
     approvedTotal: parseFloat(data.approvedTotal),
-    pending:       statusCounts.DRAFT + statusCounts.SENT + statusCounts.VIEWED,
+    pending: statusCounts.DRAFT + statusCounts.SENT + statusCounts.VIEWED,
     donutData,
     barData,
-    recentQuotes:  data.recentQuotes,
+    recentQuotes: data.recentQuotes,
   }
 }
 
@@ -129,14 +119,20 @@ function DonutLegend({ data }: { data: ChartEntry[] }) {
 
 export function HomePage() {
   const navigate = useNavigate()
-  const { selectedId, selectedCompany, loading: loadingCompanies } = useCompany()
+  const { selectedId, selectedCompany, loading: loadingCompanies, refreshCompanies, setSelectedId } = useCompany()
 
   const [stats, setStats] = useState<Stats | null>(null)
   const [loadingStats, setLoadingStats] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [createOpen, setCreateOpen] = useState(false)
+
+  async function handleCompanyCreated(company: Company) {
+    await refreshCompanies()
+    setSelectedId(company.id)
+  }
 
   useEffect(() => {
-    if (!selectedId) return
+    if (loadingCompanies || !selectedId) return
 
     let cancelled = false
     setLoadingStats(true)
@@ -155,7 +151,7 @@ export function HomePage() {
 
     void load()
     return () => { cancelled = true }
-  }, [selectedId])
+  }, [selectedId, loadingCompanies])
 
   return (
     <div className="flex flex-col gap-6">
@@ -193,13 +189,20 @@ export function HomePage() {
             Crie uma empresa para começar a usar o Propostei.
           </p>
           <button
-            onClick={() => navigate('/empresas')}
-            className="mt-1 rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700"
+            onClick={() => setCreateOpen(true)}
+            className="mt-1 flex items-center gap-1.5 rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700 cursor-pointer"
           >
-            Criar empresa
+            <Plus className="h-4 w-4" />
+            Nova empresa
           </button>
         </div>
       )}
+
+      <CreateCompanyDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        onCreated={handleCompanyCreated}
+      />
 
       {/* ── Dashboard ── */}
       {selectedCompany && (
@@ -285,11 +288,8 @@ export function HomePage() {
                               outerRadius={88}
                               paddingAngle={2}
                               strokeWidth={0}
-                            >
-                              {stats.donutData.map((entry) => (
-                                <Cell key={entry.label} fill={entry.color} />
-                              ))}
-                            </Pie>
+                              shape={(props) => <Sector {...props} fill={props.color} />}
+                            />
                             <Tooltip content={<ChartTooltip />} />
                           </PieChart>
                         </ResponsiveContainer>
@@ -343,11 +343,12 @@ export function HomePage() {
                             content={<ChartTooltip />}
                             cursor={{ fill: '#f8fafc' }}
                           />
-                          <Bar dataKey="count" radius={[0, 4, 4, 0]} maxBarSize={18}>
-                            {stats.barData.map((entry) => (
-                              <Cell key={entry.label} fill={entry.color} />
-                            ))}
-                          </Bar>
+                          <Bar
+                            dataKey="count"
+                            radius={[0, 4, 4, 0]}
+                            maxBarSize={18}
+                            shape={(props) => <Rectangle {...props} fill={props.payload.color} />}
+                          />
                         </BarChart>
                       </ResponsiveContainer>
                     )}
@@ -428,6 +429,12 @@ export function HomePage() {
         </>
       )}
 
+      <CreateCompanyDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        onCreated={handleCompanyCreated}
+      />
+
     </div>
   )
 }
@@ -457,9 +464,8 @@ function StatCard({ icon: Icon, iconBg, iconColor, label, value, loading, sub }:
       </CardHeader>
       <CardContent>
         <CardTitle
-          className={`text-2xl font-bold tabular-nums transition-opacity ${
-            loading ? 'opacity-40' : 'text-slate-900'
-          }`}
+          className={`text-2xl font-bold tabular-nums transition-opacity ${loading ? 'opacity-40' : 'text-slate-900'
+            }`}
         >
           {value}
         </CardTitle>

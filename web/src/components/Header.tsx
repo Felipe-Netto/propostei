@@ -78,14 +78,16 @@ export function Header({ onMenuClick }: HeaderProps) {
           </button>
         )}
 
-        <button
-          type="button"
-          onClick={() => setCreateOpen(true)}
-          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md bg-teal-600 text-white transition-colors hover:bg-teal-700"
-          aria-label="Nova empresa"
-        >
-          <Plus className="h-4 w-4" />
-        </button>
+        {companies.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setCreateOpen(true)}
+            className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md bg-teal-600 text-white transition-colors hover:bg-teal-700"
+            aria-label="Nova empresa"
+          >
+            <Plus className="h-4 w-4" />
+          </button>
+        )}
 
         <CreateCompanyDialog
           open={createOpen}

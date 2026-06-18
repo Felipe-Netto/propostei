@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
-import { ArrowLeft, Pencil, User, Calendar, AlignLeft } from 'lucide-react'
+import { ArrowLeft, Pencil, FileText, User, Calendar, AlignLeft } from 'lucide-react'
 import { useCompany } from '@/context/CompanyContext'
 import {
   getQuote,
@@ -9,32 +9,10 @@ import {
   rejectQuote,
   cancelQuote,
   type Quote,
-  type QuoteStatus,
 } from '@/api/quotes-api'
 import { Button } from '@/components/ui/button'
 import { extractApiError, formatBRL, formatDate } from '@/lib/utils'
-
-const statusLabel: Record<QuoteStatus, string> = {
-  DRAFT: 'Rascunho',
-  SENT: 'Enviada',
-  VIEWED: 'Visualizada',
-  APPROVED: 'Aprovada',
-  REJECTED: 'Rejeitada',
-  CANCELED: 'Cancelada',
-  EXPIRED: 'Expirada',
-}
-
-const statusColor: Record<QuoteStatus, string> = {
-  DRAFT: 'bg-slate-100 text-slate-500',
-  SENT: 'bg-blue-50 text-blue-700',
-  VIEWED: 'bg-violet-50 text-violet-700',
-  APPROVED: 'bg-teal-50 text-teal-700',
-  REJECTED: 'bg-red-50 text-red-600',
-  CANCELED: 'bg-slate-100 text-slate-400',
-  EXPIRED: 'bg-amber-50 text-amber-700',
-}
-
-const editableStatuses: QuoteStatus[] = ['DRAFT', 'SENT', 'VIEWED']
+import { STATUS_CONFIG } from '@/constants/quotes'
 
 export function QuoteDetailPage() {
   const { quoteId } = useParams<{ quoteId: string }>()
@@ -96,7 +74,7 @@ export function QuoteDetailPage() {
     )
   }
 
-  const canEdit = editableStatuses.includes(quote.status)
+  const canEdit = STATUS_CONFIG[quote.status].editable
   const items = quote.items ?? []
 
   return (
@@ -116,8 +94,8 @@ export function QuoteDetailPage() {
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2.5">
             <h1 className="text-xl font-bold text-slate-900">{quote.title}</h1>
-            <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${statusColor[quote.status]}`}>
-              {statusLabel[quote.status]}
+            <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${STATUS_CONFIG[quote.status].style}`}>
+              {STATUS_CONFIG[quote.status].label}
             </span>
           </div>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-400">
@@ -137,16 +115,32 @@ export function QuoteDetailPage() {
           </div>
         </div>
 
-        {canEdit && (
+        <div className="flex items-center gap-2">
           <Button
-            onClick={() => navigate(`/propostas/${quoteId}/editar`, { state: { backTo, backLabel } })}
+            asChild
             variant="outline"
             className="h-9 gap-1.5 border-slate-200 text-sm text-slate-700 hover:bg-slate-50"
           >
-            <Pencil className="h-3.5 w-3.5" />
-            Editar
+            <a
+              href={`${import.meta.env.VITE_API_URL}/propostas/${quote.publicToken}/pdf`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <FileText className="h-3.5 w-3.5" />
+              Ver PDF
+            </a>
           </Button>
-        )}
+          {canEdit && (
+            <Button
+              onClick={() => navigate(`/propostas/${quoteId}/editar`, { state: { backTo, backLabel } })}
+              variant="outline"
+              className="h-9 gap-1.5 border-slate-200 text-sm text-slate-700 hover:bg-slate-50"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+              Editar
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Status actions */}

@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Phone, Mail, MapPin, FileText, Plus, ChevronRight, Pencil } from 'lucide-react'
 import { useCompany } from '@/context/CompanyContext'
 import { getClient, updateClient, type Client } from '@/api/clients-api'
-import { listClientQuotes, type Quote, type QuoteStatus } from '@/api/quotes-api'
+import { listClientQuotes, type Quote } from '@/api/quotes-api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -19,26 +19,7 @@ import {
 } from '@/components/ui/dialog'
 import { extractApiError, formatBRL, formatDate } from '@/lib/utils'
 import { maskPhone, maskDocument } from '@/lib/masks'
-
-const statusLabel: Record<QuoteStatus, string> = {
-  DRAFT: 'Rascunho',
-  SENT: 'Enviada',
-  VIEWED: 'Visualizada',
-  APPROVED: 'Aprovada',
-  REJECTED: 'Rejeitada',
-  CANCELED: 'Cancelada',
-  EXPIRED: 'Expirada',
-}
-
-const statusColor: Record<QuoteStatus, string> = {
-  DRAFT: 'bg-slate-100 text-slate-500',
-  SENT: 'bg-blue-50 text-blue-700',
-  VIEWED: 'bg-violet-50 text-violet-700',
-  APPROVED: 'bg-teal-50 text-teal-700',
-  REJECTED: 'bg-red-50 text-red-600',
-  CANCELED: 'bg-slate-100 text-slate-400',
-  EXPIRED: 'bg-amber-50 text-amber-700',
-}
+import { STATUS_CONFIG } from '@/constants/quotes'
 
 export function ClientDetailPage() {
   const { clientId } = useParams<{ clientId: string }>()
@@ -383,8 +364,8 @@ export function ClientDetailPage() {
                         <p className="truncate text-sm font-semibold text-slate-900">
                           {quote.title}
                         </p>
-                        <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${statusColor[quote.status]}`}>
-                          {statusLabel[quote.status]}
+                        <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_CONFIG[quote.status].style}`}>
+                          {STATUS_CONFIG[quote.status].label}
                         </span>
                       </div>
                       <p className="mt-0.5 text-xs text-slate-400">

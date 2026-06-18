@@ -1,5 +1,5 @@
 import api from './api'
-import type { QuoteStatus } from './quotes-api'
+import type { QuoteStatus } from '@/types/quotes'
 
 export interface DashboardRecentQuote {
   id: string
