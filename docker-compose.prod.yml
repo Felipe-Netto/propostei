@@ -1,0 +1,70 @@
+# Production Docker Compose
+#
+# IMPORTANT: This file reads secrets from a .env.prod file that must exist ONLY
+# on the production server. Never commit .env.prod to version control.
+# See .env.example for required variables.
+#
+# Usage:
+#   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # Not exposed publicly — only reachable by the api service on the internal network
+    networks:
+      - internal
+
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile.prod
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # Run migrations before starting the server
+    command: sh -c "npx prisma migrate deploy && npm run start:prod"
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
+      PORT: ${PORT:-3000}
+      # URL_WEB controls the CORS allowed origin in NestJS (see api/src/main.ts)
+      URL_WEB: ${FRONTEND_URL}
+    # Not exposed publicly — only reachable by the web service on the internal network
+    networks:
+      - internal
+
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile.prod
+      args:
+        # Baked into the Vite bundle at build time; nginx proxies /api → api:3000
+        VITE_API_URL: /api
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "80:80"
+    networks:
+      - internal
+
+networks:
+  internal:
+    driver: bridge
+
+volumes:
+  postgres_data:

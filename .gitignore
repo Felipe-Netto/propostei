@@ -1,2 +1,8 @@
 node_modules
 package-lock.json
+
+# Environment files — never commit real secrets
+.env
+.env.*
+# Allow the example template
+!.env.example
