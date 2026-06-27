@@ -8,6 +8,7 @@ interface LogoProps {
   white?: boolean
   className?: string
   size?: LogoSize
+  height?: number
 }
 
 // The 500×500 PNG has ~28% transparent top, ~38% bottom, ~7% left, ~8% right.
@@ -24,21 +25,23 @@ const sizeConfig: Record<LogoSize, {
   lg: { imgW: 200, containerW: 175, containerH: 80, offsetTop: 56, offsetLeft: 14 },
 }
 
-export function Logo({ white = false, className, size = 'sm' }: LogoProps) {
+export function Logo({ white = false, className, size = 'sm', height }: LogoProps) {
   const cfg = sizeConfig[size]
+  const scale = height ? height / cfg.containerH : 1
+
   return (
     <div
       className={cn('shrink-0 overflow-hidden', className)}
-      style={{ width: cfg.containerW, height: cfg.containerH }}
+      style={{ width: cfg.containerW * scale, height: cfg.containerH * scale }}
     >
       <img
         src={white ? logoProposteiLight : logoProposteiDark}
         alt="Propostei"
         style={{
-          width: cfg.imgW,
+          width: cfg.imgW * scale,
           height: 'auto',
-          marginTop: -cfg.offsetTop,
-          marginLeft: -cfg.offsetLeft,
+          marginTop: -cfg.offsetTop * scale,
+          marginLeft: -cfg.offsetLeft * scale,
         }}
       />
     </div>
