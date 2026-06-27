@@ -69,8 +69,9 @@ COPY package*.json ./
 RUN npm ci --omit=dev
 
 COPY --from=builder /app/dist ./dist
-# Prisma schema and migrations are needed at runtime for "prisma migrate deploy"
+# Prisma schema, config, and migrations are needed at runtime for "prisma migrate deploy"
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
 # Puppeteer's downloaded Chrome lives in the cache directory
 COPY --from=builder /root/.cache/puppeteer /root/.cache/puppeteer
 
